@@ -8,12 +8,18 @@ namespace CafeOrderSystem.Api.Validators
         public RegisterDtoValidator()
         {
             RuleFor(x => x.Username)
+            .NotEmpty()
+            .MinimumLength(4)
+            .MaximumLength(50);
+
+            RuleFor(x => x.Email)
                 .NotEmpty()
-                .MinimumLength(4);
+                .EmailAddress();
 
             RuleFor(x => x.Password)
                 .NotEmpty()
-                .MinimumLength(6);
+                .MinimumLength(6)
+                .MaximumLength(100);
         }
     }
 }

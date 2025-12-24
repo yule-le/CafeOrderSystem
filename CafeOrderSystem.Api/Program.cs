@@ -1,4 +1,5 @@
 using CafeOrderSystem.Api.Data;
+using CafeOrderSystem.Api.Repositories;
 using CafeOrderSystem.Api.Services;
 using CafeOrderSystem.Api.Validators;
 using FluentValidation;
@@ -8,6 +9,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
+using System.Text.Json.Serialization;
 
 var builder = WebApplication.CreateBuilder(args);
 // Add configuration for JWT settings
@@ -18,7 +20,11 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 {
     options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection"));
 });
-builder.Services.AddControllers();
+builder.Services.AddControllers()
+    .AddJsonOptions(options =>
+    {
+        options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
+    });
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
 
@@ -69,8 +75,14 @@ builder.Services.AddAuthorization(options =>
     options.AddPolicy("CustomerOnly", policy => policy.RequireRole("Customer"));
 });
 
-// Dependency Injection
+// Repositories
+builder.Services.AddScoped<IOrderRepository, OrderRepository>();
+
+// Services
+builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IProductService, ProductService>();
+builder.Services.AddScoped<ICartService, CartService>();
+builder.Services.AddScoped<IOrderService, OrderService>();
 
 // Fluent Validation
 builder.Services.AddFluentValidationAutoValidation();
@@ -84,6 +96,17 @@ if (app.Environment.IsDevelopment())
     app.MapOpenApi();
     app.UseSwagger();
     app.UseSwaggerUI();
+}
+
+// Seed roles
+using (var scope = app.Services.CreateScope())
+{
+    var services = scope.ServiceProvider;
+    var roleManager = services.GetRequiredService<RoleManager<IdentityRole>>();
+    var userManager = services.GetRequiredService<UserManager<IdentityUser>>();
+
+    await DbSeeder.SeedRolesAsync(roleManager);
+    await DbSeeder.SeedAdminAsync(userManager);
 }
 
 app.UseHttpsRedirection();

@@ -22,33 +22,48 @@ namespace CafeOrderSystem.Api.Controllers
         [HttpPost("login")]
         public async Task<IActionResult> Login(LoginDto dto)
         {
-            var token = await _authService.LoginAsync(dto.Username, dto.Password);
-            if (token == null)
-                return Unauthorized(new 
-                { 
-                    success = false, 
-                    message = "Invalid credentials" 
+            var (result, token, username, role) = await _authService.LoginAsync(dto.Username, dto.Password);
+
+            if (!result.Succeeded)
+            {
+                var errors = result.Errors.Select(e => e.Description).ToArray();
+
+                return BadRequest(new
+                {
+                    success = false,
+                    message = "Login failed",
+                    errors
                 });
+            }
 
             return Ok(new
             {
                 success = true,
-                message = "Login successful",
-                token
+                data = new LoginResponseDto
+                {
+                    Token = token!,
+                    Username = username!,
+                    Role = role!
+                }
             });
         }
 
         [HttpPost("register")]
         public async Task<IActionResult> Register(RegisterDto dto)
         {
-            var success = await _authService.RegisterAsync(dto.Username, dto.Password);
+            var result = await _authService.RegisterAsync(dto.Username, dto.Email, dto.Password);
 
-            if (!success)
-                return BadRequest(new 
-                { 
-                    success = false, 
-                    message = "Registration failed" 
+            if(!result.Succeeded)
+            {
+                var errors = result.Errors.Select(e => e.Description).ToArray();
+
+                return BadRequest(new
+                {
+                    success = false,
+                    message = "Registration failed",
+                    errors
                 });
+            }
 
             return Ok(new 
             { 

@@ -1,6 +1,7 @@
 ﻿using CafeOrderSystem.Api.Data;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.IdentityModel.Tokens;
+using System.Security.Claims;
 using System.Text;
 
 namespace CafeOrderSystem.Api.Services
@@ -16,23 +17,37 @@ namespace CafeOrderSystem.Api.Services
             _config = config;
         }
 
-        public async Task<string?> LoginAsync(string username, string password)
+        public async Task<(IdentityResult Result, string? Token, string? Username, string? Role)> LoginAsync(string username, string password)
         {
             var user = await _userManager.FindByNameAsync(username);
             if (user == null)
-                return null;
+            {
+                return (IdentityResult.Failed(new IdentityError
+                {
+                    Code = "InvalidLogin",
+                    Description = "Invalid username or password"
+                }), null, null, null);
+            }
 
             var valid = await _userManager.CheckPasswordAsync(user, password);
             if (!valid)
-                return null;
+            {
+                return (IdentityResult.Failed(new IdentityError
+                {
+                    Code = "InvalidLogin",
+                    Description = "Invalid username or password"
+                }), null, null, null);
+            }
 
             var roles = await _userManager.GetRolesAsync(user);
             var role = roles.FirstOrDefault() ?? "Customer";
 
-            return GenerateJwtToken(user.UserName!, role);
+            var token = GenerateJwtToken(user, role);
+
+            return (IdentityResult.Success, token, user.UserName, role);
         }
 
-        private string GenerateJwtToken(string username, string role)
+        private string GenerateJwtToken(IdentityUser user, string role)
         {
             var jwtSettings = _config.GetSection("JwtSettings");
             var secret = jwtSettings["SecretKey"]
@@ -43,9 +58,10 @@ namespace CafeOrderSystem.Api.Services
 
             var claims = new[]
             {
-            new System.Security.Claims.Claim(System.Security.Claims.ClaimTypes.Name, username),
-            new System.Security.Claims.Claim(System.Security.Claims.ClaimTypes.Role, role)
-        };
+                new Claim(ClaimTypes.NameIdentifier, user.Id),
+                new Claim(ClaimTypes.Name, user.UserName!),
+                new Claim(ClaimTypes.Role, role)
+            };
 
             var expiryMinutes = double.Parse(jwtSettings["ExpiryMinutes"] ?? "60");
 
@@ -60,21 +76,30 @@ namespace CafeOrderSystem.Api.Services
             return new System.IdentityModel.Tokens.Jwt.JwtSecurityTokenHandler().WriteToken(token);
         }
 
-        public async Task<bool> RegisterAsync(string username, string password)
+        public async Task<IdentityResult> RegisterAsync(string username, string email, string password)
         {
+            if (await _userManager.FindByEmailAsync(email) != null)
+            {
+                return IdentityResult.Failed(new IdentityError
+                {
+                    Code = "DuplicateEmail",
+                    Description = "Email is already taken."
+                });
+            }
+
             var user = new IdentityUser
             {
-                UserName = username
+                UserName = username,
+                Email = email
             };
 
             var result = await _userManager.CreateAsync(user, password);
             if (!result.Succeeded)
-                return false;
+                return result;
 
-            // Default role
             await _userManager.AddToRoleAsync(user, "Customer");
-
-            return true;
+            return IdentityResult.Success;
         }
+
     }
 }
