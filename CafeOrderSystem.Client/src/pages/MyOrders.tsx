@@ -17,6 +17,7 @@ interface Order {
   notes?: string;
   type: string;
   paymentMethod: string;
+  failureReason?: string;
 }
 
 const MyOrders = () => {
@@ -135,6 +136,14 @@ const MyOrders = () => {
                     <p className="text-sm text-neutral-600 font-light">
                       <span className="text-neutral-900">Notes:</span>{" "}
                       {order.notes}
+                    </p>
+                  )}
+                  {order.failureReason && (
+                    <p className="text-sm text-red-600 font-light">
+                      <span className="text-red-700 font-medium">
+                        Payment Failed:
+                      </span>{" "}
+                      {order.failureReason}
                     </p>
                   )}
                 </div>

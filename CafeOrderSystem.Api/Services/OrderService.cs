@@ -73,6 +73,30 @@ namespace CafeOrderSystem.Api.Services
             };
         }
 
+        public async Task<List<OrderDto>> GetAllOrdersAsync()
+        {
+            var orders = await _repo.GetAllAsync();
+            if (orders == null)
+                return null!;
+            return orders.Select(o => new OrderDto
+            {
+                Id = o.Id,
+                TotalAmount = o.TotalAmount,
+                Status = o.Status,
+                CreatedAt = o.CreatedAt,
+                Notes = o.Notes,
+                Type = o.Type,
+                PaymentMethod = o.PaymentMethod,
+                FailureReason = o.FailureReason,
+                Items = o.Items.Select(i => new OrderItemDto
+                {
+                    ProductId = i.ProductId,
+                    ProductName = i.Product.Name,
+                    Quantity = i.Quantity,
+                    UnitPrice = i.UnitPrice
+                }).ToList()
+            }).ToList();
+        }
         public async Task<List<OrderDto>> GetUserOrdersAsync(string userId)
         {
             var orders = await _repo.GetOrdersByUserAsync(userId);
@@ -87,6 +111,7 @@ namespace CafeOrderSystem.Api.Services
                 Notes = o.Notes,
                 Type = o.Type,
                 PaymentMethod = o.PaymentMethod,
+                FailureReason = o.FailureReason,
                 Items = o.Items.Select(i => new OrderItemDto
                 {
                     ProductId = i.ProductId,
@@ -95,6 +120,39 @@ namespace CafeOrderSystem.Api.Services
                     UnitPrice = i.UnitPrice
                 }).ToList()
             }).ToList();
+        }
+
+        public async Task<OrderDto?> UpdateOrderStatusAsync(int orderId, OrderStatus status)
+        {
+            var order = await _repo.GetByIdAsync(orderId);
+            if (order == null) return null;
+
+            if (status != OrderStatus.Completed &&
+                status != OrderStatus.Cancelled &&
+                status != OrderStatus.Paid)
+                throw new ArgumentException("Invalid order status");
+
+            order.Status = status;
+            await _repo.SaveChangesAsync();
+
+            return new OrderDto
+            {
+                Id = order.Id,
+                TotalAmount = order.TotalAmount,
+                Status = order.Status,
+                CreatedAt = order.CreatedAt,
+                Notes = order.Notes,
+                Type = order.Type,
+                PaymentMethod = order.PaymentMethod,
+                FailureReason = order.FailureReason,
+                Items = order.Items.Select(i => new OrderItemDto
+                {
+                    ProductId = i.ProductId,
+                    ProductName = i.Product.Name,
+                    Quantity = i.Quantity,
+                    UnitPrice = i.UnitPrice
+                }).ToList()
+            };
         }
     }
 }

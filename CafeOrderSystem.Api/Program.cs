@@ -8,12 +8,15 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using StripeService = Stripe;
 using System.Text;
 using System.Text.Json.Serialization;
 
 var builder = WebApplication.CreateBuilder(args);
 // Add configuration for JWT settings
 var jwtSettings = builder.Configuration.GetSection("JwtSettings");
+// Configure Stripe
+Stripe.StripeConfiguration.ApiKey =builder.Configuration["Stripe:SecretKey"];
 
 // Add services to the container.
 builder.Services.AddDbContext<AppDbContext>(options =>
@@ -83,6 +86,7 @@ builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IProductService, ProductService>();
 builder.Services.AddScoped<ICartService, CartService>();
 builder.Services.AddScoped<IOrderService, OrderService>();
+builder.Services.AddScoped<IPaymentService, PaymentService>();
 
 // Fluent Validation
 builder.Services.AddFluentValidationAutoValidation();
@@ -104,9 +108,11 @@ using (var scope = app.Services.CreateScope())
     var services = scope.ServiceProvider;
     var roleManager = services.GetRequiredService<RoleManager<IdentityRole>>();
     var userManager = services.GetRequiredService<UserManager<IdentityUser>>();
+    var dbContext = services.GetRequiredService<AppDbContext>();
 
     await DbSeeder.SeedRolesAsync(roleManager);
     await DbSeeder.SeedAdminAsync(userManager);
+    await DbSeeder.SeedProductsAsync(dbContext);
 }
 
 app.UseHttpsRedirection();

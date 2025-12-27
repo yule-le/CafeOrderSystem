@@ -12,5 +12,6 @@ namespace CafeOrderSystem.Api.DTOs
         public string? Notes { get; set; }
         public OrderType Type { get; set; } = OrderType.DineIn;
         public PaymentMethod PaymentMethod { get; set; } = PaymentMethod.Cash;
+        public string? FailureReason { get; set; }
     }
 }

@@ -16,6 +16,14 @@ namespace CafeOrderSystem.Api.Repositories
             return order;
         }
 
+        public async Task<List<Order>> GetAllAsync()
+        {
+            return await _context.Orders
+                .Include(o => o.Items)
+                .ThenInclude(i => i.Product)
+                .OrderByDescending(o => o.CreatedAt)
+                .ToListAsync();
+        }
         public async Task<List<Order>> GetOrdersByUserAsync(string userId)
         {
             return await _context.Orders
@@ -24,6 +32,18 @@ namespace CafeOrderSystem.Api.Repositories
                 .Where(o => o.UserId == userId)
                 .OrderByDescending(o => o.CreatedAt)
                 .ToListAsync();
+        }
+
+        public async Task<Order?> GetByIdAsync(int orderId)
+        {
+            return await _context.Orders
+                .Include(o => o.Items)
+                .ThenInclude(i => i.Product)
+                .FirstOrDefaultAsync(o => o.Id == orderId);
+        }
+        public async Task SaveChangesAsync()
+        {
+            await _context.SaveChangesAsync();
         }
     }
 }

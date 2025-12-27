@@ -399,3 +399,11 @@ FodyWeavers.xsd
 
 # JetBrains Rider
 *.sln.iml
+
+# Environment variables and sensitive configuration files
+.env
+.env.*
+!.env.example
+**/appsettings.json
+**/appsettings.*.json
+!**/appsettings.*.example.json

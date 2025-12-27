@@ -81,12 +81,20 @@ const Navbar = () => {
             {isLoggedIn ? (
               <>
                 {userRole === "Admin" ? (
-                  <Link
-                    to="/product-management"
-                    className="text-neutral-700 hover:text-neutral-900 transition-colors duration-300 text-xs sm:text-sm font-light cursor-pointer"
-                  >
-                    Product Management
-                  </Link>
+                  <>
+                    <Link
+                      to="/product-management"
+                      className="text-neutral-700 hover:text-neutral-900 transition-colors duration-300 text-xs sm:text-sm font-light cursor-pointer"
+                    >
+                      Products
+                    </Link>
+                    <Link
+                      to="/order-management"
+                      className="text-neutral-700 hover:text-neutral-900 transition-colors duration-300 text-xs sm:text-sm font-light cursor-pointer"
+                    >
+                      Orders
+                    </Link>
+                  </>
                 ) : (
                   <>
                     <Link

@@ -35,3 +35,17 @@ export const getMyOrders = async () => {
   const response = await api.get("/Orders/my-orders");
   return response.data;
 };
+
+export const getAllOrders = async () => {
+  const response = await api.get("/Orders");
+  return response.data;
+};
+
+export const updateOrderStatus = async (orderId: number, newStatus: string) => {
+  const response = await api.patch(`/Orders/${orderId}/status`, newStatus, {
+    headers: {
+      "Content-Type": "application/json",
+    },
+  });
+  return response.data;
+};
